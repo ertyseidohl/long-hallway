@@ -1,23 +1,80 @@
 import Browser
+import Browser.Events exposing (onKeyDown, onKeyUp)
 import Html exposing (Html, button, div, text)
-import Html.Events exposing (onClick)
+import Json.Decode as Decode
+
+type alias Model =
+    { count : Int, isLeftKeyDown : Bool, isRightKeyDown : Bool }
+
+
+initialModel : Model
+initialModel =
+    { count = 0, isLeftKeyDown = False, isRightKeyDown = False }
 
 main =
-  Browser.sandbox { init = 0, update = update, view = view }
+  Browser.document {
+    init = \() -> (initialModel, Cmd.none),
+    update = \msg model -> (update msg model, Cmd.none),
+    view = view,
+    subscriptions = subscriptions
+  }
 
-type Msg = Increment | Decrement
+eventTypeMap : KeyEventType -> Bool
+eventTypeMap eventType =
+  case eventType of
+    KeyUp -> False
+    KeyDown -> True
 
+update : KeyEvent -> Model -> Model
 update msg model =
   case msg of
-    Increment ->
-      model + 1
+    ( eventType, Left ) ->
+      { model | isLeftKeyDown = (eventTypeMap eventType) }
 
-    Decrement ->
-      model - 1
+    ( eventType, Right ) ->
+      { model | isRightKeyDown = (eventTypeMap eventType) }
 
-view model =
-  div []
-    [ button [ onClick Decrement ] [ text "-" ]
-    , div [] [ text (String.fromInt model) ]
-    , button [ onClick Increment ] [ text "+" ]
+    ( _, Other )  ->
+      model
+
+view model = {
+  title = "Hello World",
+  body =
+    [
+      div []
+        [ text (String.fromInt model.count) ]
     ]
+  }
+
+subscriptions : Model -> Sub KeyEvent
+subscriptions _ = Sub.batch [
+    onKeyDown Sub.map (keyDecoder |> \dir -> (KeyDown, dir)),
+    onKeyUp Sub.map (keyDecoder |> \dir -> (KeyUp, dir))
+  ]
+
+type KeyEventType
+  = KeyUp
+  | KeyDown
+
+type Direction
+  = Left
+  | Right
+  | Other
+
+type alias KeyEvent = ( KeyEventType,  Direction )
+
+keyDecoder : Decode.Decoder Direction
+keyDecoder =
+  Decode.map toDirection (Decode.field "key" Decode.string)
+
+toDirection : String -> Direction
+toDirection string =
+  case string of
+    "ArrowLeft" ->
+      Left
+
+    "ArrowRight" ->
+      Right
+
+    _ ->
+      Other
