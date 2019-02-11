@@ -1,6 +1,7 @@
 import Browser
 import Browser.Events exposing (onAnimationFrameDelta, onKeyDown, onKeyUp)
 import Html exposing (Html, button, div, text)
+import Html.Attributes exposing (style)
 import Json.Decode as Decode
 import Set exposing (Set)
 
@@ -8,6 +9,8 @@ expectedFramerate = 16.66666
 friction = 0.85
 minSpeed = 0.001
 maxSpeed = 10
+width = "800px"
+height = "600px"
 
 type alias Model =
     { xVelocity : Float, xPosition : Float, keysDown : Set String }
@@ -15,7 +18,7 @@ type alias Model =
 
 initialModel : Model
 initialModel =
-    { xVelocity = 0, xPosition = 0, keysDown = Set.empty }
+    { xVelocity = 0.0, xPosition = 0.0, keysDown = Set.empty }
 
 type Msg
   = KeyChange Bool String
@@ -41,7 +44,13 @@ view model = {
   title = "Hello World",
   body =
     [
-      div []
+      div [
+        style "background-image" "url(../assets/background.placeholder.png)",
+        style "background-repeat" "repeat-x",
+        style "width" width,
+        style "height" height,
+        style "background-position" ((String.fromInt (modBy 100 (floor model.xPosition))) ++ "px")
+      ]
         [ text (String.fromFloat model.xVelocity), text (String.fromFloat model.xPosition) ]
     ]
   }
