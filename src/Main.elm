@@ -1,80 +1,81 @@
 import Browser
-import Browser.Events exposing (onKeyDown, onKeyUp)
+import Browser.Events exposing (onAnimationFrameDelta, onKeyDown, onKeyUp)
 import Html exposing (Html, button, div, text)
 import Json.Decode as Decode
+import Set exposing (Set)
+
+expectedFramerate = 16.66666
+friction = 0.85
+minSpeed = 0.001
+maxSpeed = 10
 
 type alias Model =
-    { count : Int, isLeftKeyDown : Bool, isRightKeyDown : Bool }
+    { xVelocity : Float, xPosition : Float, keysDown : Set String }
 
 
 initialModel : Model
 initialModel =
-    { count = 0, isLeftKeyDown = False, isRightKeyDown = False }
+    { xVelocity = 0, xPosition = 0, keysDown = Set.empty }
+
+type Msg
+  = KeyChange Bool String
+  | Tick Float
 
 main =
   Browser.document {
     init = \() -> (initialModel, Cmd.none),
-    update = \msg model -> (update msg model, Cmd.none),
+    update = update,
     view = view,
     subscriptions = subscriptions
   }
 
-eventTypeMap : KeyEventType -> Bool
-eventTypeMap eventType =
-  case eventType of
-    KeyUp -> False
-    KeyDown -> True
-
-update : KeyEvent -> Model -> Model
-update msg model =
-  case msg of
-    ( eventType, Left ) ->
-      { model | isLeftKeyDown = (eventTypeMap eventType) }
-
-    ( eventType, Right ) ->
-      { model | isRightKeyDown = (eventTypeMap eventType) }
-
-    ( _, Other )  ->
-      model
+update : Msg -> Model -> (Model, Cmd Msg)
+update action model =
+  case action of
+    KeyChange isPressed key ->
+      (handleKeyChange isPressed key model, Cmd.none)
+    Tick delta ->
+      (handleTick delta model, Cmd.none)
 
 view model = {
   title = "Hello World",
   body =
     [
       div []
-        [ text (String.fromInt model.count) ]
+        [ text (String.fromFloat model.xVelocity), text (String.fromFloat model.xPosition) ]
     ]
   }
 
-subscriptions : Model -> Sub KeyEvent
-subscriptions _ = Sub.batch [
-    onKeyDown Sub.map (keyDecoder |> \dir -> (KeyDown, dir)),
-    onKeyUp Sub.map (keyDecoder |> \dir -> (KeyUp, dir))
-  ]
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.batch
+    [ onKeyDown (Decode.map (KeyChange True) keyDecoder),
+      onKeyUp (Decode.map (KeyChange False) keyDecoder),
+      onAnimationFrameDelta (Tick)
+    ]
 
-type KeyEventType
-  = KeyUp
-  | KeyDown
+handleKeyChange : Bool -> String -> Model -> Model
+handleKeyChange isPressed key model =
+  { model | keysDown = (if isPressed then Set.insert else Set.remove) key model.keysDown }
 
-type Direction
-  = Left
-  | Right
-  | Other
-
-type alias KeyEvent = ( KeyEventType,  Direction )
-
-keyDecoder : Decode.Decoder Direction
+keyDecoder : Decode.Decoder String
 keyDecoder =
-  Decode.map toDirection (Decode.field "key" Decode.string)
+  Decode.field "key" Decode.string
 
-toDirection : String -> Direction
-toDirection string =
-  case string of
-    "ArrowLeft" ->
-      Left
+handleTick : Float -> Model -> Model
+handleTick delta model =
+  let xAcc = if Set.member "ArrowLeft" model.keysDown && Set.member "ArrowRight" model.keysDown then 0
+             else if Set.member "ArrowLeft" model.keysDown then -1
+             else if Set.member "ArrowRight" model.keysDown then 1
+             else 0
+  in
+    let xAdjustedAcc = xAcc  * (delta / expectedFramerate)
+    in
+    { model | xVelocity = (capSpeed (friction * model.xVelocity)) + xAdjustedAcc
+            , xPosition = model.xPosition + model.xVelocity + xAdjustedAcc }
 
-    "ArrowRight" ->
-      Right
-
-    _ ->
-      Other
+capSpeed : Float -> Float
+capSpeed speed =
+  if abs speed < minSpeed then 0
+  else if speed > 0 then clamp minSpeed 10 speed
+  else clamp -maxSpeed -minSpeed speed
