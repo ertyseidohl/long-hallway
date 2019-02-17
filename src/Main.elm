@@ -9,10 +9,16 @@ expectedFramerate = 16.66666
 friction = 0.85
 minSpeed = 0.001
 maxSpeed = 10
-width = 800
-height = 600
-doorWidth = 100
-doorHeight = 200
+width = 200
+height = 800
+
+doorWidth : Int
+doorWidth =
+  (floor (width * 0.12))
+doorHeight : Int
+doorHeight =
+  (floor (height * 0.3))
+
 
 type alias Model =
     { xVelocity : Float, xPosition : Float, doorPosition : Float, keysDown : Set String }
@@ -53,25 +59,35 @@ view model = {
         --text (String.fromFloat model.xVelocity),
         text (String.fromFloat model.xPosition)
       ],
-      div [
-        style "background-image" "url(../assets/background.placeholder.png)",
-        style "background-repeat" "repeat-x",
-        style "width" ((String.fromInt width) ++ "px"),
-        style "height" ((String.fromInt height) ++ "px"),
-        style "background-position" ((String.fromInt (modBy 100 (floor -model.xPosition))) ++ "px"),
-        style "position" "absolute",
-        style "top" "0"
+      div [ -- main container
+          style "position" "relative",
+          style "width" ((String.fromInt width) ++ "px"),
+          style "height" ((String.fromInt height) ++ "px"),
+          style "overflow" "hidden",
+          style "background-color" "cornflowerblue"
+        ] [
+        div [ -- background
+          style "background-image" "url(../assets/background.placeholder.png)",
+          style "background-repeat" "repeat-x",
+          style "background-size" "auto 100%",
+          style "width" "100%",
+          style "height" "100%",
+          style "background-position" ((String.fromInt (floor -model.xPosition)) ++ "px"),
+          style "position" "absolute",
+          style "top" "0"
+        ]
+          [ ],
+        div [ -- door
+          style "background-image" "url(../assets/door.placeholder.png)",
+          style "background-repeat" "no-repeat",
+          style "background-size" "100% 100%",
+          style "width" ((String.fromInt doorWidth) ++ "px"),
+          style "height" ((String.fromInt doorHeight) ++ "px"),
+          style "position" "absolute",
+          style "top" (String.fromInt (height - doorHeight) ++ "px"),
+          style "left" ((String.fromInt (floor -model.xPosition)) ++ "px")
+        ] []
       ]
-        [ ],
-      div [
-        style "background-image" "url(../assets/door.placeholder.png)",
-        style "background-repeat" "no-repeat",
-        style "width" ((String.fromInt doorWidth) ++ "px"),
-        style "height" ((String.fromInt doorHeight) ++ "px"),
-        style "position" "absolute",
-        style "top" (String.fromInt (height - doorHeight) ++ "px"),
-        style "left" ((String.fromInt (floor -model.xPosition)) ++ "px")
-      ] []
     ]
   }
 
