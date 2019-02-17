@@ -9,16 +9,18 @@ expectedFramerate = 16.66666
 friction = 0.85
 minSpeed = 0.001
 maxSpeed = 10
-width = "800px"
-height = "600px"
+width = 800
+height = 600
+doorWidth = 100
+doorHeight = 200
 
 type alias Model =
-    { xVelocity : Float, xPosition : Float, keysDown : Set String }
+    { xVelocity : Float, xPosition : Float, doorPosition : Float, keysDown : Set String }
 
 
 initialModel : Model
 initialModel =
-    { xVelocity = 0.0, xPosition = 0.0, keysDown = Set.empty }
+    { xVelocity = 0.0, xPosition = 0.0, doorPosition = 0.0, keysDown = Set.empty }
 
 type Msg
   = KeyChange Bool String
@@ -45,13 +47,31 @@ view model = {
   body =
     [
       div [
+        style "position" "absolute",
+        style "top" "620px"
+      ] [
+        --text (String.fromFloat model.xVelocity),
+        text (String.fromFloat model.xPosition)
+      ],
+      div [
         style "background-image" "url(../assets/background.placeholder.png)",
         style "background-repeat" "repeat-x",
-        style "width" width,
-        style "height" height,
-        style "background-position" ((String.fromInt (modBy 100 (floor model.xPosition))) ++ "px")
+        style "width" ((String.fromInt width) ++ "px"),
+        style "height" ((String.fromInt height) ++ "px"),
+        style "background-position" ((String.fromInt (modBy 100 (floor -model.xPosition))) ++ "px"),
+        style "position" "absolute",
+        style "top" "0"
       ]
-        [ text (String.fromFloat model.xVelocity), text (String.fromFloat model.xPosition) ]
+        [ ],
+      div [
+        style "background-image" "url(../assets/door.placeholder.png)",
+        style "background-repeat" "no-repeat",
+        style "width" ((String.fromInt doorWidth) ++ "px"),
+        style "height" ((String.fromInt doorHeight) ++ "px"),
+        style "position" "absolute",
+        style "top" (String.fromInt (height - doorHeight) ++ "px"),
+        style "left" ((String.fromInt (floor -model.xPosition)) ++ "px")
+      ] []
     ]
   }
 
@@ -86,5 +106,5 @@ handleTick delta model =
 capSpeed : Float -> Float
 capSpeed speed =
   if abs speed < minSpeed then 0
-  else if speed > 0 then clamp minSpeed 10 speed
+  else if speed > 0 then clamp minSpeed maxSpeed speed
   else clamp -maxSpeed -minSpeed speed
