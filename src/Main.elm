@@ -1,4 +1,5 @@
 import Browser
+import Browser.Dom exposing (getViewport)
 import Browser.Events exposing (onAnimationFrameDelta, onKeyDown, onKeyUp)
 import Html exposing (Html, button, div, text)
 import Html.Attributes exposing (style)
@@ -9,15 +10,20 @@ expectedFramerate = 16.66666
 friction = 0.85
 minSpeed = 0.001
 maxSpeed = 10
-width = 200
-height = 800
 
-doorWidth : Int
+width : Float
+width =
+  getViewport.viewport.width
+height : Float
+height =
+  getViewport.viewport.height
+
+doorWidth : Float
 doorWidth =
-  (floor (width * 0.12))
-doorHeight : Int
+  width * 0.12
+doorHeight : Float
 doorHeight =
-  (floor (height * 0.3))
+  height * 0.3
 
 
 type alias Model =
@@ -61,8 +67,8 @@ view model = {
       ],
       div [ -- main container
           style "position" "relative",
-          style "width" ((String.fromInt width) ++ "px"),
-          style "height" ((String.fromInt height) ++ "px"),
+          style "width" ((String.fromFloat width) ++ "px"),
+          style "height" ((String.fromFloat height) ++ "px"),
           style "overflow" "hidden",
           style "background-color" "cornflowerblue"
         ] [
@@ -81,10 +87,10 @@ view model = {
           style "background-image" "url(../assets/door.placeholder.png)",
           style "background-repeat" "no-repeat",
           style "background-size" "100% 100%",
-          style "width" ((String.fromInt doorWidth) ++ "px"),
-          style "height" ((String.fromInt doorHeight) ++ "px"),
+          style "width" ((String.fromFloat doorWidth) ++ "px"),
+          style "height" ((String.fromFloat doorHeight) ++ "px"),
           style "position" "absolute",
-          style "top" (String.fromInt (height - doorHeight) ++ "px"),
+          style "top" (String.fromFloat (height - doorHeight) ++ "px"),
           style "left" ((String.fromInt (floor -model.xPosition)) ++ "px")
         ] []
       ]
